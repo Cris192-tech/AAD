@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html ng-app="validationApp">
+<head>
+  <title>AngularJS Form Validation</title>
+  <style>
+    .form-container {
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      font-weight: bold;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    .error {
+      color: red;
+      font-size: 12px;
+    }
+    input.ng-invalid.ng-touched {
+      border: 1px solid red;
+    }
+    .success-message {
+      color: green;
+      font-weight: bold;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container" ng-controller="validationController">
+    <h2>User Registration Form</h2>
+    <form name="userForm" ng-submit="submitForm(userForm.$valid)" novalidate>
+      <div class="form-group">
+        <label>Name:</label>
+        <input type="text" name="name" ng-model="user.name" required ng-minlength="3" ng-maxlength="50">
+        <div class="error" ng-show="userForm.name.$invalid && userForm.name.$touched">
+          <span ng-show="userForm.name.$error.required">Name is required</span>
+          <span ng-show="userForm.name.$error.minlength">Name must be at least 3 characters</span>
+          <span ng-show="userForm.name.$error.maxlength">Name cannot exceed 50 characters</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Email:</label>
+        <input type="email" name="email" ng-model="user.email" required>
+        <div class="error" ng-show="userForm.email.$invalid && userForm.email.$touched">
+          <span ng-show="userForm.email.$error.required">Email is required</span>
+          <span ng-show="userForm.email.$error.email">Enter a valid email address</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Phone:</label>
+        <input type="text" name="phone" ng-model="user.phone" ng-pattern="/^[0-9]{10}$/" required>
+        <div class="error" ng-show="userForm.phone.$invalid && userForm.phone.$touched">
+          <span ng-show="userForm.phone.$error.required">Phone number is required</span>
+          <span ng-show="userForm.phone.$error.pattern">Please enter a 10-digit phone number</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Age:</label>
+        <input type="number" name="age" ng-model="user.age" min="18" max="120" required>
+        <div class="error" ng-show="userForm.age.$invalid && userForm.age.$touched">
+          <span ng-show="userForm.age.$error.required">Age is required</span>
+          <span ng-show="userForm.age.$error.min">You must be at least 18 years old</span>
+          <span ng-show="userForm.age.$error.max">Age cannot exceed 120 years</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Gender:</label>
+        <select name="gender" ng-model="user.gender" required>
+          <option value="">Select Gender</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="other">Other</option>
+        </select>
+        <div class="error" ng-show="userForm.gender.$invalid && userForm.gender.$touched">
+          <span>Please select a gender</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Password:</label>
+        <input type="password" name="password" ng-model="user.password" required ng-minlength="8" ng-pattern="/(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])/" autocomplete="off">
+        <div class="error" ng-show="userForm.password.$invalid && userForm.password.$touched">
+          <span ng-show="userForm.password.$error.required">Password is required</span>
+          <span ng-show="userForm.password.$error.minlength">Password must be at least 8 characters</span>
+          <span ng-show="userForm.password.$error.pattern">Password must contain an uppercase, lowercase, and a number</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Confirm Password:</label>
+        <input type="password" name="confirmPassword" ng-model="user.confirmPassword" required compare-to="user.password" autocomplete="off">
+        <div class="error" ng-show="userForm.confirmPassword.$invalid && userForm.confirmPassword.$touched">
+          <span ng-show="userForm.confirmPassword.$error.required">Please confirm your password</span>
+          <span ng-show="userForm.confirmPassword.$error.compareTo">Passwords do not match</span>
+        </div>
+      </div>
+
+      <button type="submit" ng-disabled="userForm.$invalid">Submit</button>
+      <div class="success-message" ng-show="formSubmitted">Form submitted successfully!</div>
+    </form>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.2/angular.min.js"></script>
+  <script>
+    var app = angular.module('validationApp', []);
+    app.directive('compareTo', function () {
+      return {
+        require: "ngModel",
+        scope: { compareTo: "=compareTo" },
+        link: function (scope, element, attrs, ngModel) {
+          ngModel.$validators.compareTo = function (modelValue) {
+            return modelValue === scope.compareTo;
+          };
+          scope.$watch("compareTo", function () { ngModel.$validate(); });
+        }
+      };
+    });
+    app.controller('validationController', ['$scope', '$timeout', function ($scope, $timeout) {
+      $scope.user = {};
+      $scope.formSubmitted = false;
+      $scope.submitForm = function (isValid) {
+        if (isValid) {
+          console.log('Form submitted:', $scope.user);
+          $scope.formSubmitted = true;
+          $scope.user = {};
+          $scope.userForm.$setPristine();
+          $scope.userForm.$setUntouched();
+          $timeout(function () { $scope.formSubmitted = false; }, 3000);
+        }
+      };
+    }]);
+  </script>
+</body>
+</html>
